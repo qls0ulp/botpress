@@ -84,6 +84,12 @@ export default async (bp: typeof sdk, db: Database) => {
     }
   }
 
+  router.get('/google-auth', async (req, res) => {
+    console.log(`ca marche criss!`)
+    console.log(req.query.code)
+    res.send('<div>Google auth success!</div><script>window.setTimeout(window.close, 1500)</script>')
+  })
+
   router.get(
     '/botInfo',
     asyncApi(async (req, res) => {
