@@ -10,6 +10,7 @@ import { applyDisposeOnExit, applyInitializeFromConfig } from './misc/inversify'
 import { ModuleLoader } from './module-loader'
 import { RepositoriesContainerModules } from './repositories/repositories.inversify'
 import HTTPServer from './server'
+import { LangService } from './services/lang-service'
 import { DataRetentionJanitor } from './services/retention/janitor'
 import { DataRetentionService } from './services/retention/service'
 import { ServicesContainerModules } from './services/services.inversify'
@@ -100,6 +101,11 @@ container
 container
   .bind<WorkspaceService>(TYPES.WorkspaceService)
   .to(WorkspaceService)
+  .inSingletonScope()
+
+container
+  .bind<LangService>(TYPES.LangService)
+  .to(LangService)
   .inSingletonScope()
 
 const isPackaged = !!eval('process.pkg')

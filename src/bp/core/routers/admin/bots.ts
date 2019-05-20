@@ -1,6 +1,7 @@
 import { BotConfig, Logger } from 'botpress/sdk'
 import { ConfigProvider } from 'core/config/config-loader'
 import { BotService } from 'core/services/bot-service'
+import { LangService } from 'core/services/lang-service'
 import { WorkspaceService } from 'core/services/workspace-service'
 import { RequestHandler, Router } from 'express'
 import Joi from 'joi'
@@ -22,7 +23,8 @@ export class BotsRouter extends CustomRouter {
     logger: Logger,
     private workspaceService: WorkspaceService,
     private botService: BotService,
-    private configProvider: ConfigProvider
+    private configProvider: ConfigProvider,
+    private langService: LangService
   ) {
     super('Bots', logger, Router({ mergeParams: true }))
     this.logger = logger
@@ -75,7 +77,8 @@ export class BotsRouter extends CustomRouter {
           { code: 'pt', name: 'Portuguese' }
         ]
 
-        res.send(languages)
+        // res.send(languages)
+        res.send(await this.langService.getLanguages())
       })
     )
 

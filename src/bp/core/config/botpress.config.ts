@@ -239,6 +239,7 @@ export type BotpressConfig = {
    * @default false
    */
   autoRevision: boolean
+  languageModels: LanguageEmbeddings
 }
 
 export interface ExternalAuthConfig {
@@ -429,3 +430,50 @@ export interface AlertingConfig {
    */
   rules: IncidentRule[]
 }
+
+export interface LangEmbeddingsMetadata {
+  languages: {
+    [lang: string]: {
+      name: string
+      flag: string
+    }
+  }
+  models: {
+    [filename: string]: LanguageModel
+  }
+}
+
+export interface LanguageModel {
+  /** The name of the model. Could also be described as the "id" */
+  filename: string
+  /** Full path to the model. After download, the local filename will match the above property */
+  location: string
+  /** The text that will be displayed in the UI */
+  name: string
+  /** Size of the model, in bytes */
+  size: number
+  /** The language code for this particular model */
+  language: string
+  /** The number of different dimensions included in the model */
+  dimensions: number
+  /** The default environment for this specific model */
+  defaultEnv: 'development' | 'production'
+  trainedOn: Date
+  trainedBy: string
+}
+
+export interface LanguageEmbeddings {
+  metadataUrl: string
+  /** This is where the models will be saved. To keep the models throughought ve */
+  location: string
+  installed: InstalledModels
+}
+
+export interface InstalledModels {
+  [lang: string]: {
+    production: string
+    development: string
+  }
+}
+
+// [key: string]: Slot | Slot[]
