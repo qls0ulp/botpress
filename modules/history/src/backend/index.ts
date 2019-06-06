@@ -8,6 +8,7 @@ const onServerStarted = async (bp: typeof sdk) => {}
 
 const onServerReady = async (bp: typeof sdk) => {
   const db = new Database(bp)
+  db.initialize()
   api(bp, db)
 }
 

@@ -6,6 +6,7 @@ import { MessageViewer } from './MessageViewer'
 import { ConversationPicker } from './ConversationPicker'
 
 const CONV_PARAM_NAME = 'conversation'
+const BASE_API_PATH = '/mod/history/'
 
 export default class FullView extends React.Component {
   state = {
@@ -31,7 +32,7 @@ export default class FullView extends React.Component {
 
   getConversations = async (from, to) => {
     const ceiledToDate = moment(to).add(1, 'days')
-    const apiURL = `/mod/history/conversations?from=${from.unix()}&to=${ceiledToDate.unix()}`
+    const apiURL = `${BASE_API_PATH}/conversations?from=${from.unix()}&to=${ceiledToDate.unix()}`
     const { data } = await this.props.bp.axios.get(apiURL)
     this.setState({ conversationsInfo: data })
   }
@@ -48,8 +49,10 @@ export default class FullView extends React.Component {
     return sessionId !== this.state.currentConversation || currentConversation.count !== receivedData.messageCount
   }
 
-  getMessagesOfConversation = async sessionId => {
-    const { data } = await this.props.bp.axios.get(`/mod/history/messages/${sessionId}`)
+  getMessagesOfConversation = async (sessionId, filters) => {
+    let ressourceUrl = `${BASE_API_PATH}/messages/${sessionId}`
+    ressourceUrl += filters && filters.flag ? '?flag=true' : ''
+    const { data } = await this.props.bp.axios.get(ressourceUrl)
 
     const conversationsInfoCopy = [...this.state.conversationsInfo]
     const desiredConvInfo = conversationsInfoCopy.find(c => c.id === sessionId)
@@ -83,7 +86,7 @@ export default class FullView extends React.Component {
 
   fetchMoreMessages = async () => {
     const { data } = await this.props.bp.axios.get(
-      `/mod/history/more-messages/${this.state.currentConversation}?offset=${
+      `${BASE_API_PATH}/more-messages/${this.state.currentConversation}?offset=${
         this.state.currentConversationMessageGroupsOffset
       }&clientCount=${this.state.currentConversationMessageGroupsCount}`
     )
@@ -95,6 +98,10 @@ export default class FullView extends React.Component {
       messageGroups: messageGroupsCopy,
       currentConversationMessageGroupsOffset: messageGroupsCopy.length
     })
+  }
+
+  flagMessages = async messages => {
+    this.props.bp.axios.post(`${BASE_API_PATH}/flagged-messages`, messages)
   }
 
   render() {
@@ -119,6 +126,8 @@ export default class FullView extends React.Component {
           fetchNewMessages={() => this.fetchMoreMessages()}
           conversation={this.state.currentConversation}
           messageGroups={this.state.messageGroups}
+          flagMessages={m => this.flagMessages(m)}
+          updateConversationWithFilters={f => this.getMessagesOfConversation(this.state.currentConversation, f)}
         />
       </div>
     )

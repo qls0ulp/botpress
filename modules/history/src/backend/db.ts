@@ -1,7 +1,9 @@
 import * as sdk from 'botpress/sdk'
 
 import moment from 'moment'
-import { isNullOrUndefined } from 'util'
+
+const FLAGS_TABLE_NAME = 'history_flags'
+const EVENTS_TABLE_NAME = 'events'
 
 export default class HistoryDb {
   knex: any
@@ -10,11 +12,29 @@ export default class HistoryDb {
     this.knex = bp.database
   }
 
+  initialize = async () => {
+    this.knex.createTableIfNotExists(FLAGS_TABLE_NAME, table => {
+      table.string('flaggedMessageId').primary()
+    })
+  }
+
+  flagMessages = async (messages: sdk.IO.Event[]) => {
+    let newRows = messages.map(m => ({ flaggedMessageId: m.id }))
+    const currentRows = await this.knex
+      .select()
+      .from(FLAGS_TABLE_NAME)
+      .whereIn('flaggedMessageId', newRows.map(m => m.flaggedMessageId))
+      .then(rows => rows.map(r => r.flaggedMessageId))
+
+    newRows = newRows.filter(r => !currentRows.includes(r.flaggedMessageId))
+    await this.knex.batchInsert(FLAGS_TABLE_NAME, newRows, 30)
+  }
+
   getDistinctConversations = async (botId: string, from?: number, to?: number) => {
     const query = this.knex
       .select()
       .distinct('sessionId')
-      .from('events')
+      .from(EVENTS_TABLE_NAME)
       .whereNotNull('sessionId')
       .andWhere({ botId })
 
@@ -34,17 +54,25 @@ export default class HistoryDb {
     return Promise.all(uniqueConversations.map(buildConversationInfo))
   }
 
-  getMessagesOfConversation = async (sessionId, count, offset) => {
-    const incomingMessages: sdk.IO.Event[] = await this.knex
-      .select('event')
+  getMessagesOfConversation = async (sessionId, count, offset, filters) => {
+    const incomingMessagesQuery = this.knex.select('event').from(EVENTS_TABLE_NAME)
+
+    if (filters.flags) {
+      incomingMessagesQuery.join(
+        FLAGS_TABLE_NAME,
+        `${EVENTS_TABLE_NAME}.incominEventId`,
+        `${FLAGS_TABLE_NAME}.flaggedMessageId`
+      )
+    }
+
+    const incomingMessages: sdk.IO.Event[] = await incomingMessagesQuery
       .orderBy('createdOn', 'desc')
       .where({ sessionId, direction: 'incoming' })
-      .from('events')
       .offset(offset)
       .limit(count)
       .then(rows => rows.map(r => this.knex.json.get(r.event)))
 
-    const messages = await this.knex('events')
+    const messages = await this.knex(EVENTS_TABLE_NAME)
       .whereIn('incomingEventId', incomingMessages.map(x => x.id))
       .then(rows => rows.map(r => this.knex.json.get(r.event)))
 
@@ -61,7 +89,7 @@ export default class HistoryDb {
 
   private async _getMessageCountWhere(whereParams) {
     const messageCountObject = await this.knex
-      .from('events')
+      .from(EVENTS_TABLE_NAME)
       .count()
       .where(whereParams)
 

@@ -110,7 +110,7 @@
 .message {
   &-header {
     display: flex;
-    margin-bottom: 3%;
+    margin-bottom: 1%;
 
     &-icons {
       margin-left: auto;
@@ -237,4 +237,16 @@
   position: absolute;
   cursor: pointer;
   color: #434343;
+}
+
+.messageTaskBar {
+  background-color: #a1a1a1;
+  width: 60%;
+  margin-bottom: 2%;
+  padding: 0 1%;
+
+  &FlagIcon {
+    width: fit-content;
+    cursor: pointer;
+  }
 }
